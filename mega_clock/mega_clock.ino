@@ -14,6 +14,10 @@ bool online = false;        // true while the ESP reports WiFi + valid time
 unsigned long lastTick = 0;     // last time we advanced the local clock
 unsigned long lastGoodMsg = 0;  // last time we got a valid time from the ESP
 
+// Set to true to print what's happening to the USB Serial Monitor (115200 baud).
+// Needs DIP switches 1, 2, 3, 4 ON so you can see it while the ESP is connected.
+const bool DEBUG = true;
+
 char line[32];
 byte lineLen = 0;
 
@@ -40,6 +44,7 @@ void addOneSecond() {
 }
 
 void handleLine(const char* s) {
+  if (DEBUG) { Serial.print("ESP says: "); Serial.println(s); }
   int h, m, sec;
   if (s[0] == 'T' && sscanf(s, "T %d:%d:%d", &h, &m, &sec) == 3 &&
       h >= 0 && h < 24 && m >= 0 && m < 60 && sec >= 0 && sec < 60) {
@@ -73,6 +78,10 @@ void readEsp() {
 }
 
 void setup() {
+  if (DEBUG) {
+    Serial.begin(115200);
+    Serial.println("Mega started");  // if this repeats, the Mega keeps resetting
+  }
   Serial3.begin(115200);  // link to the ESP8266
   lcd.init();
   lcd.backlight();
