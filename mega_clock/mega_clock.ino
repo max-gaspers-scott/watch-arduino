@@ -21,6 +21,31 @@ const bool DEBUG = true;
 char line[32];
 byte lineLen = 0;
 
+// Decorative wave on the bottom row while WiFi is OK. Uses the LCD's 8 custom
+// characters as bars of height 1..8 pixels, and scrolls a sine-like shape.
+const unsigned long WAVE_FRAME_MS = 120;  // lower = faster wave
+const byte WAVE[16] = {4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3};
+byte waveFrame = 0;
+unsigned long lastWave = 0;
+
+void createWaveChars() {
+  for (byte h = 1; h <= 8; h++) {
+    byte bar[8];
+    for (byte row = 0; row < 8; row++) {
+      bar[row] = (row >= 8 - h) ? 0x1F : 0x00;  // fill from the bottom up
+    }
+    lcd.createChar(h - 1, bar);
+  }
+}
+
+void drawWave() {
+  lcd.setCursor(0, 1);
+  for (byte col = 0; col < 16; col++) {
+    lcd.write(byte(WAVE[(col + waveFrame) % 16] - 1));
+  }
+  waveFrame = (waveFrame + 1) % 16;
+}
+
 void showTime() {
   char buf[17];
   lcd.setCursor(0, 0);
@@ -31,8 +56,11 @@ void showTime() {
   }
   lcd.print(buf);
 
-  lcd.setCursor(0, 1);
-  lcd.print(online ? "    WiFi OK     " : "    No WiFi     ");
+  // When online, the bottom row is the wave (drawn in loop()).
+  if (!online) {
+    lcd.setCursor(0, 1);
+    lcd.print("    No WiFi     ");
+  }
 }
 
 void addOneSecond() {
@@ -85,6 +113,7 @@ void setup() {
   Serial3.begin(115200);  // link to the ESP8266
   lcd.init();
   lcd.backlight();
+  createWaveChars();
   showTime();
   lastTick = millis();
 }
@@ -100,5 +129,10 @@ void loop() {
     lastTick += 1000;
     if (!online && haveTime) addOneSecond();
     showTime();
+  }
+
+  if (online && millis() - lastWave >= WAVE_FRAME_MS) {
+    lastWave = millis();
+    drawWave();
   }
 }
