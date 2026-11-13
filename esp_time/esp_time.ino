@@ -3,7 +3,8 @@
 //
 // Sends one line per second:
 //   "T hh:mm:ss"  -> WiFi connected and time is synced
-//   "N"           -> no WiFi (or time not synced yet)
+//   "N"           -> no WiFi
+//   "W"           -> WiFi connected, but no time from the internet yet
 
 #include <ESP8266WiFi.h>
 #include <time.h>
@@ -41,6 +42,8 @@ void loop() {
       char buf[16];
       snprintf(buf, sizeof(buf), "T %02d:%02d:%02d", t.tm_hour, t.tm_min, t.tm_sec);
       Serial.println(buf);
+    } else if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("W");  // on WiFi, still waiting for NTP time
     } else {
       Serial.println("N");
     }
