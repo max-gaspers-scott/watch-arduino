@@ -1,6 +1,6 @@
 // Mega side: shows the time on a 20x4 I2C LCD, in binary:
-//   row 1: hours   (e.g. 8  -> 1000)
-//   row 2: minutes (e.g. 30 -> 11110)
+//   row 1: hours   (e.g. 8  -> 001000)
+//   row 2: minutes (e.g. 30 -> 011110)
 //   row 3: seconds
 //   row 4: a scrolling wave animation
 // Gets the time from the ESP8266 (on Serial3) every second. If there is no
@@ -27,19 +27,13 @@ const bool DEBUG = true;
 char line[32];
 byte lineLen = 0;
 
-// Prints one LCD row: the number in binary (no leading zeros), or "--" if
+// Prints one LCD row: the number in binary, padded to 6 digits, or "------" if
 // we don't know the time yet. The rest of the row is blanked out.
 void printBinaryRow(int row, int value) {
   char buf[LCD_COLS + 1];
   int len = 0;
-  if (!haveTime) {
-    buf[len++] = '-'; buf[len++] = '-';
-  } else if (value == 0) {
-    buf[len++] = '0';
-  } else {
-    int bit = 5;                           // 63 is the biggest value we show
-    while (!(value & (1 << bit))) bit--;   // skip leading zeros
-    for (; bit >= 0; bit--) buf[len++] = (value & (1 << bit)) ? '1' : '0';
+  for (int bit = 5; bit >= 0; bit--) {    // always 6 digits (63 is the biggest value)
+    buf[len++] = !haveTime ? '-' : (value & (1 << bit)) ? '1' : '0';
   }
   while (len < LCD_COLS) buf[len++] = ' ';
   buf[len] = '\0';

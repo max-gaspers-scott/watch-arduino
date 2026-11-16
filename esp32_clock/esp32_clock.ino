@@ -1,7 +1,7 @@
 // ESP32 binary clock: gets the time from the internet (NTP) over WiFi and
 // shows it on a 20x4 I2C LCD, in binary:
-//   row 1: hours   (e.g. 8  -> 1000)
-//   row 2: minutes (e.g. 30 -> 11110)
+//   row 1: hours   (e.g. 8  -> 001000)
+//   row 2: minutes (e.g. 30 -> 011110)
 //   row 3: seconds
 //   row 4: a scrolling wave animation
 //
@@ -75,19 +75,13 @@ bool timeIsValid() {
   return time(nullptr) > 1700000000;  // anything before Nov 2023 means "not synced"
 }
 
-// Prints one LCD row: the number in binary (no leading zeros), or "--" if
+// Prints one LCD row: the number in binary, padded to 6 digits, or "------" if
 // we don't know the time yet, followed by that row's status text.
 void printRow(int row, int value, bool haveTime) {
   char buf[LCD_COLS + 1];
   int len = 0;
-  if (!haveTime) {
-    buf[len++] = '-'; buf[len++] = '-';
-  } else if (value == 0) {
-    buf[len++] = '0';
-  } else {
-    int bit = 5;                           // 63 is the biggest value we show
-    while (!(value & (1 << bit))) bit--;   // skip leading zeros
-    for (; bit >= 0; bit--) buf[len++] = (value & (1 << bit)) ? '1' : '0';
+  for (int bit = 5; bit >= 0; bit--) {    // always 6 digits (63 is the biggest value)
+    buf[len++] = !haveTime ? '-' : (value & (1 << bit)) ? '1' : '0';
   }
   while (len < STATUS_COL) buf[len++] = ' ';
   for (const char* p = statusText[row]; *p && len < LCD_COLS; p++) buf[len++] = *p;
