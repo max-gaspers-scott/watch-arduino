@@ -52,6 +52,11 @@ const unsigned long DHCP_TIMEOUT_MS    = 10000;  // get an IP address
 const unsigned long NTP_TIMEOUT_MS     = 15000;  // get the time from the internet
 const unsigned long RETRY_DELAY_MS     = 10000;  // wait after an error before retrying
 
+// Steps of the WiFi connection (see updateWifi). Declared up here because the
+// Arduino IDE puts auto-generated function prototypes before the first
+// function, and goToStep() takes a WifiStep.
+enum WifiStep { STEP_CONNECTING, STEP_GETTING_IP, STEP_GETTING_TIME, STEP_OK, STEP_WAIT_RETRY, STEP_NO_CONFIG };
+
 // ---- LCD layout ----
 // Columns 0-5: binary number (max 6 bits), column 6: gap,
 // columns 7-19: status text (13 characters, one line per row).
@@ -193,7 +198,6 @@ void showDisconnectReason(int r) {
   }
 }
 
-enum WifiStep { STEP_CONNECTING, STEP_GETTING_IP, STEP_GETTING_TIME, STEP_OK, STEP_WAIT_RETRY, STEP_NO_CONFIG };
 WifiStep step = STEP_CONNECTING;
 unsigned long stepStart = 0;
 bool ntpChecked = false;     // already looked into why NTP isn't answering
